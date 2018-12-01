@@ -1,0 +1,180 @@
+import java.io.*;
+import java_cup.runtime.*; 
+
+parser code
+{:
+	public static void main(String args[]) throws Exception{
+		//new parser(new Yylex(new FileInputStream(args[0]))).parse();
+		new parser(new Yylex(System.in)).parse();
+	}
+	public void syntax_error(Symbol s){
+		report_error("Erros Sintaticos. Linha: " + (s.right + 1) +
+		" Coluna: " + s.left + ". Texto: \"" + s.value + "\"", null);
+	}
+:}
+
+/* Terminals */
+terminal	BEGIN, END;
+terminal	AND, OR, NOT;
+terminal	IF, ELSE;
+terminal	WHILE;
+terminal	FINAL;
+terminal	INT, BYTE, STRING, BOOLEAN;
+terminal	READLN;
+terminal	WRITE, WRITELN;
+terminal	IDENTIFICADOR;
+terminal	LIT_INTEIRO, LIT_BOOLEANO, LIT_STRING;
+terminal	PONTO_VIRGULA, VIRGULA;
+terminal	ATR;
+terminal	A_PARENTESE, F_PARENTESE;
+terminal	MAIS, MENOS, MULT, DIVI;
+terminal        MENOR, MENOR_IGUAL, IGUAL, DIFERENTE, MAIOR_IGUAL, MAIOR;
+
+/* Não terminais */
+
+non terminal programa;
+non terminal declaracao;
+non terminal bloco;
+non terminal tipo;
+non terminal lista_id;
+non terminal const_declaracao;
+non terminal comandos;
+non terminal comando;
+non terminal entrada_comando;
+non terminal saida_comando;
+non terminal saida_op;
+non terminal saida_expr;
+non terminal expr_mat, fator_mat, term_mat;
+non terminal expr_relac, relac_op;
+non terminal expr_logica, term_logico, term_logico2, term_logico1;
+non terminal while, if;
+non terminal if_afirmacao;
+non terminal str_expr;
+non terminal attr_expr;
+
+/* Gramatica */
+
+programa ::= declaracao bloco {: System.out.println("Sentença analizada corretamente. Nenhum erro encontrado."); :}
+            | error {: System.out.println("Existem erros sintaticos na sentença"); :}
+            ;
+
+declaracao ::= tipo lista_id PONTO_VIRGULA declaracao
+             | const_declaracao PONTO_VIRGULA declaracao
+             |
+			  ;
+
+tipo ::= INT
+       | BYTE
+       | BOOLEAN 
+       | STRING
+    ;
+
+lista_id ::= IDENTIFICADOR VIRGULA lista_id 
+             | IDENTIFICADOR
+	     | IDENTIFICADOR ATR LIT_INTEIRO VIRGULA lista_id 
+	     | IDENTIFICADOR ATR LIT_INTEIRO
+	     | IDENTIFICADOR ATR LIT_STRING VIRGULA lista_id 
+             | IDENTIFICADOR ATR LIT_STRING
+	     | IDENTIFICADOR ATR LIT_BOOLEANO VIRGULA lista_id 
+             | IDENTIFICADOR ATR LIT_BOOLEANO
+	;
+
+const_declaracao ::= FINAL IDENTIFICADOR ATR LIT_INTEIRO
+	            | FINAL IDENTIFICADOR ATR LIT_STRING
+	            | FINAL IDENTIFICADOR ATR LIT_BOOLEANO
+                    ;
+
+bloco ::= BEGIN comandos END
+          ;
+
+comandos ::= comando comandos
+             | bloco comandos
+             |
+             ;
+
+comando ::= entrada_comando PONTO_VIRGULA
+            | saida_comando PONTO_VIRGULA
+	    | while
+            | if
+	    | attr_expr
+            | PONTO_VIRGULA
+	    ;
+
+entrada_comando ::= READLN VIRGULA IDENTIFICADOR
+                    ;
+
+saida_comando ::= saida_op VIRGULA saida_expr
+                  ;
+
+saida_op ::= WRITE
+            | WRITELN
+	    ;
+
+saida_expr ::= expr_mat VIRGULA saida_expr
+               | str_expr VIRGULA saida_expr
+	       | expr_mat
+	       | str_expr
+	       ; 
+
+str_expr ::= LIT_STRING MAIS str_expr
+             | LIT_STRING
+	     ;
+
+expr_mat ::= expr_mat MAIS fator_mat
+             | expr_mat MENOS fator_mat
+	     | fator_mat
+	     ;
+
+fator_mat ::= fator_mat MULT term_mat
+              | fator_mat DIVI term_mat
+	      | term_mat
+	      ;
+
+term_mat ::= LIT_INTEIRO
+             | IDENTIFICADOR
+             | A_PARENTESE expr_mat F_PARENTESE
+	     ;
+
+expr_relac ::= expr_mat relac_op expr_mat
+               ;
+
+relac_op ::= MENOR
+            | MENOR_IGUAL
+	    | IGUAL
+	    | DIFERENTE 
+	    | MAIOR_IGUAL 
+	    | MAIOR 
+	    ;
+
+expr_logica ::= expr_logica OR term_logico 
+               | term_logico
+	       ;
+
+term_logico ::= term_logico AND term_logico2 
+                | term_logico2
+		;
+
+term_logico2 ::= NOT term_logico1 
+                | term_logico1
+		;
+
+term_logico1 ::= LIT_BOOLEANO 
+                 | expr_relac 
+		 | A_PARENTESE expr_logica F_PARENTESE
+		 ;
+
+while ::= WHILE A_PARENTESE expr_logica F_PARENTESE comando
+	  | WHILE A_PARENTESE expr_logica F_PARENTESE bloco
+	  ;
+
+if ::= IF A_PARENTESE expr_logica F_PARENTESE if_afirmacao 
+       | IF A_PARENTESE expr_logica F_PARENTESE if_afirmacao ELSE if_afirmacao
+       ;
+
+if_afirmacao ::= bloco
+		;
+
+attr_expr ::= IDENTIFICADOR ATR str_expr PONTO_VIRGULA 
+              | IDENTIFICADOR ATR expr_logica PONTO_VIRGULA
+	      | IDENTIFICADOR ATR expr_mat PONTO_VIRGULA
+	      ;
